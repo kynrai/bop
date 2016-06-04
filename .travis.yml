@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.7.3
+  - tip
+
+before_script:
+  - wget -O gnatsd.zip https://github.com/nats-io/gnatsd/releases/download/v0.9.4/gnatsd-v0.9.4-linux-amd64.zip
+  - unzip gnatsd.zip
+  - ./gnatsd-v0.9.4-linux-amd64/gnatsd &
