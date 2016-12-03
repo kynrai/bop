@@ -18,6 +18,8 @@ func main() {
 	s.Run()
 }
 
+// Hello will decode the request and its payload and reply with a message
+// after contacting the bye handler via the service client
 func Hello(ctx context.Context, req, resp *bop.Message) error {
 	var msg struct {
 		Name string
@@ -30,6 +32,7 @@ func Hello(ctx context.Context, req, resp *bop.Message) error {
 	return nil
 }
 
+// Bye will respond with a payload saying bye
 func Bye(ctx context.Context, req, resp *bop.Message) error {
 	resp.Payload = []byte("bye response payload")
 	return nil

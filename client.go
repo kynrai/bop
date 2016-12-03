@@ -6,7 +6,7 @@ import (
 	"github.com/nats-io/nats"
 )
 
-const DEFAULT_TIMEOUT = 100 * time.Millisecond
+const defaultTimeout = 100 * time.Millisecond
 
 func init() {
 	conn = NewConnection(true)
@@ -21,18 +21,20 @@ type (
 		Req, Resp     *Message
 		PlatformError error
 	}
-	clientOptions func(*client)
+	// ClientOptions sets options on a given client
+	ClientOptions func(*client)
 )
 
 func (c *client) Execute() {
 	if c.Timeout == 0 {
-		c.Timeout = DEFAULT_TIMEOUT
+		c.Timeout = defaultTimeout
 	}
 	c.PlatformError = conn.Request(c.Service, c.Req, c.Resp, c.Timeout)
 
 }
 
-func NewRequest(service string, request *Message, options ...clientOptions) *Message {
+// NewRequest creates a new client request to be sent to the given service via gnatsd
+func NewRequest(service string, request *Message, options ...ClientOptions) *Message {
 	c := new(client)
 	c.Service = service
 	c.Req = request
@@ -47,7 +49,8 @@ func NewRequest(service string, request *Message, options ...clientOptions) *Mes
 	return c.Resp
 }
 
-func Timeout(t time.Duration) clientOptions {
+// Timeout sets the timeout of a client
+func Timeout(t time.Duration) ClientOptions {
 	return func(c *client) {
 		c.Timeout = t
 	}

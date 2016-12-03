@@ -14,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/appdash/traceapp"
 )
 
+// Trace applies the given tracer to a handler in order to add tracing meta data to the request
 func Trace(tracer opentracing.Tracer, subject string, h HandlerFunc) HandlerFunc {
 	return func(ctx context.Context, req, resp *Message) error {
 		var sp opentracing.Span
@@ -31,6 +32,8 @@ func Trace(tracer opentracing.Tracer, subject string, h HandlerFunc) HandlerFunc
 	}
 }
 
+// StartAppDash is a helper function to start an instance of appdash.
+// It returns a tracer which can be used in a server
 func StartAppDash() opentracing.Tracer {
 	store := appdash.NewMemoryStore()
 

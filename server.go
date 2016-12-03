@@ -2,38 +2,43 @@ package bop
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
-
-	"fmt"
 
 	"github.com/nats-io/nats"
 	"github.com/opentracing/opentracing-go"
 )
 
 type (
+	// Handler defines a handler for an endpoint in a service
 	Handler interface {
 		Handle(ctx context.Context, req, resp *Message) error
 	}
+	// HandlerFunc is a function adaptor for Handler
 	HandlerFunc func(ctx context.Context, req, resp *Message) error
 
-	server struct {
+	// Server represents the server which will run the microservice
+	Server struct {
 		name        string
 		conn        *nats.EncodedConn
 		subscribers map[string]*nats.Subscription
 		tracer      opentracing.Tracer
 		handlers    map[string]HandlerFunc
 	}
-	option func(*server)
+	// Option is a function which sets variables in a server
+	Option func(*Server)
 )
 
+// Handle executes a handler with the given context and request
 func (h HandlerFunc) Handle(ctx context.Context, req, resp *Message) error {
 	return h(ctx, req, resp)
 }
 
-func Service(options ...option) *server {
-	s := new(server)
+// Service starts a new server which runs the microservice
+func Service(options ...Option) *Server {
+	s := new(Server)
 	s.handlers = make(map[string]HandlerFunc)
 	s.subscribers = make(map[string]*nats.Subscription)
 	s.conn = NewConnection(true)
@@ -48,13 +53,14 @@ func Service(options ...option) *server {
 	return s
 }
 
-func (s *server) Subscribe(service, hName string, handler HandlerFunc) {
+// Subscribe adds a subscriber to a topic and registers the asigned handler
+func (s *Server) Subscribe(service, handlerName string, handler HandlerFunc) {
 	if service == "" {
 		log.Fatal("Error subscribing to channel. subject cannot be empty")
 	}
 	var err error
-	sub := fmt.Sprintf("%s.%s", service, hName)
-	if s.subscribers[hName], err = s.conn.QueueSubscribe(sub, sub, func(subject, reply string, m *Message) {
+	sub := fmt.Sprintf("%s.%s", service, handlerName)
+	if s.subscribers[handlerName], err = s.conn.QueueSubscribe(sub, sub, func(subject, reply string, m *Message) {
 		defer func() {
 			if err := recover(); err != nil {
 				s.respond(reply, Message{Errors: []string{err.(string)}})
@@ -62,7 +68,7 @@ func (s *server) Subscribe(service, hName string, handler HandlerFunc) {
 			}
 		}()
 		var resp Message
-		if err := Trace(s.tracer, subject, handler).Handle(context.Background(), m, &resp); err != nil {
+		if err = Trace(s.tracer, subject, handler).Handle(context.Background(), m, &resp); err != nil {
 			resp.Errors = append(resp.Errors, err.Error())
 		}
 		s.respond(reply, resp)
@@ -71,13 +77,15 @@ func (s *server) Subscribe(service, hName string, handler HandlerFunc) {
 	}
 }
 
-func (s *server) respond(reply string, resp Message) {
+func (s *Server) respond(reply string, resp Message) {
 	if err := s.conn.Publish(reply, resp); err != nil {
 		log.Print("failed to respond to request ", err)
 	}
 }
 
-func (s *server) Run() {
+// Run starts the server which should have been setup at this point. Run will
+// clean up the server on exit. This call blocks until cancelled or terminated.
+func (s *Server) Run() {
 	defer func() {
 		log.Printf("ending service %q", s.name)
 		s.Close()
@@ -87,7 +95,8 @@ func (s *server) Run() {
 	<-sig
 }
 
-func (s *server) Close() {
+// Close will attempt to reclaim resources on server shutdown
+func (s *Server) Close() {
 	for _, h := range s.subscribers {
 		if err := h.Unsubscribe(); err != nil {
 			log.Printf("error unsubscribing from %q, got error %q", h.Subject, err)
@@ -98,21 +107,24 @@ func (s *server) Close() {
 	}
 }
 
-func Name(n string) option {
-	return func(s *server) {
+// Name sets the name of the service
+func Name(n string) Option {
+	return func(s *Server) {
 		s.name = n
 	}
 }
 
-func Tracer(t opentracing.Tracer) option {
-	return func(s *server) {
+// Tracer sets the tracer engine to use with the service
+func Tracer(t opentracing.Tracer) Option {
+	return func(s *Server) {
 		s.tracer = t
 		opentracing.InitGlobalTracer(s.tracer)
 	}
 }
 
-func Endpoint(name string, handler HandlerFunc) option {
-	return func(s *server) {
+// Endpoint sets a new endpoint to register with the service
+func Endpoint(name string, handler HandlerFunc) Option {
+	return func(s *Server) {
 		s.Subscribe(s.name, name, handler)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/nats-io/nats"
 )
 
+// NewConnection creates a new nats encoded connection, If reconnect is true,
+// the connection will attempt ot repair itself on disconnect
 func NewConnection(reconnect bool) *nats.EncodedConn {
 	var address string
 	if host := os.Getenv("NATS_HOST"); host == "" {
