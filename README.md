@@ -1,6 +1,7 @@
 # BOP Microservice framework
 
 [![Build Status](https://travis-ci.org/kynrai/bop.svg?branch=master)](https://travis-ci.org/kynrai/bop)
+[![codecov](https://codecov.io/gh/kynrai/bop/branch/master/graph/badge.svg)](https://codecov.io/gh/kynrai/bop)
 [![godoc](https://godoc.org/github.com/kynrai/bop?status.svg)](http://godoc.org/github.com/kynrai/bop)
 
 BOP is a light weight micro-service framework written in Go. It relies on RPC patterns using gnatsd as an rpc broker.
@@ -37,7 +38,7 @@ BOP comes with tracing out the box, if no app server is declared then no traces 
 ## Acknowledgments
 
 This project has been inspired by my own work and works of others across the open source community. Notable sources of inspiration cames from the following:
- 
+
 [go-mciro](http://micro.mu) A microservice ecosystem
 
 [gnatsd](https://nats.io) The messaging system
