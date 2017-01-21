@@ -90,6 +90,9 @@ func (s *Server) Run() {
 		log.Printf("ending service %q", s.name)
 		s.Close()
 	}()
+	if s.tracer == nil {
+		s.tracer = opentracing.NoopTracer{}
+	}
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Kill, os.Interrupt)
 	<-sig
