@@ -10,7 +10,7 @@ before_install:
 before_script:
   - wget -O gnatsd.zip https://github.com/nats-io/gnatsd/releases/download/v0.9.4/gnatsd-v0.9.4-linux-amd64.zip
   - unzip gnatsd.zip
-  - ./gnatsd-v0.9.4-linux-amd64/gnatsd &
+  - ./gnatsd-v0.9.6-linux-amd64/gnatsd &
 
 script:
   - go test -race -coverprofile=coverage.txt -covermode=atomic
